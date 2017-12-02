@@ -706,3 +706,7 @@ hr {
   max-width: 320px;
   display: inline-block;
 }
+
+#vid {
+  filter: brightness(3.2);
+}
