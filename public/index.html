@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rock Your Neck!!</title>
+
+  <link href="css/main.css" rel="stylesheet" type="text/css">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
+
+</head>
+<body>
+
+  <div class="container">
+    <div class="heading">
+      <h1 class="title">Rock Your Neck</h1>
+      <div class="scores-container">
+        <div class="score-container">0</div>
+        <div class="best-container">0</div>
+      </div>
+    </div>
+
+    <div class="above-game">
+      <a class="restart-button">Reset Game</a>
+    </div>
+
+    <div class="game-container">
+      <div class="game-message">
+        <p></p>
+        <div class="lower">
+          <a class="keep-playing-button">keep</a>
+          <a class="retry-button sr-only"></a>
+        </div>
+      </div>
+
+      <div class="grid-container">
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+          <div class="grid-cell"></div>
+        </div>
+      </div>
+
+      <div class="tile-container">
+
+      </div>
+    </div>
+
+    <div class="videos">
+  		<video id="vid" autoplay loop width="320" height="240"></video>
+      <canvas id="debug" width="320" height="240"></canvas>
+    </div>
+
+		<canvas id="overlay" width="320" height="240"></canvas>
+    <canvas id="compare" width="320" height="240" style="display:none"></canvas>
+
+		<div id="ienum"></div>
+		<div id="realtime"></div>
+		<p id='gUMMessage'></p>
+		<p>Status : <span id='headtrackerMessage'></span></p>
+		<p><input type="button" onclick="htracker.stop();htracker.start();" value="reinitiate facedetection"></input>
+
+  </div>
+  <script src="js/throttle.js"></script>
+  <script src="js/headtrackr.js"></script>
+  <script src="js/keyboard_input_manager.js"></script>
+  <script src="js/html_actuator.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/tile.js"></script>
+  <script src="js/local_storage_manager.js"></script>
+  <script src="js/game_manager.js"></script>
+  <script src="js/application.js"></script>
+   <script>
+      // set up video and canvas elements needed
+
+      var videoInput = document.getElementById('vid');
+      var canvasInput = document.getElementById('compare');
+      var canvasOverlay = document.getElementById('overlay')
+      var debugOverlay = document.getElementById('debug');
+      var overlayContext = canvasOverlay.getContext('2d');
+      canvasOverlay.style.position = "absolute";
+      canvasOverlay.style.top = '0px';
+      canvasOverlay.style.zIndex = '100001';
+      canvasOverlay.style.display = 'block';
+
+
+      // add some custom messaging
+
+      statusMessages = {
+        "whitebalance" : "checking for stability of camera whitebalance",
+        "detecting" : "Detecting face",
+        "hints" : "Hmm. Detecting the face is taking a long time",
+        "redetecting" : "Lost track of face, redetecting",
+        "lost" : "Lost track of face",
+        "found" : "Tracking face"
+      };
+
+      supportMessages = {
+        "no getUserMedia" : "Unfortunately, <a href='http://dev.w3.org/2011/webrtc/editor/getusermedia.html'>getUserMedia</a> is not supported in your browser. Try <a href='http://www.opera.com/browser/'>downloading Opera 12</a> or <a href='http://caniuse.com/stream'>another browser that supports getUserMedia</a>. Now using fallback video for facedetection.",
+        "no camera" : "No camera found. Using fallback video for facedetection."
+      };
+
+      document.addEventListener("headtrackrStatus", function(event) {
+        if (event.status in supportMessages) {
+          var messagep = document.getElementById('gUMMessage');
+          messagep.innerHTML = supportMessages[event.status];
+        } else if (event.status in statusMessages) {
+          var messagep = document.getElementById('headtrackerMessage');
+          messagep.innerHTML = statusMessages[event.status];
+        }
+      }, true);
+
+      // the face tracking setup
+
+      var htracker = new headtrackr.Tracker({altVideo : {ogv : "./media/capture5.ogv", mp4 : "./media/capture5.mp4"}, calcAngles : true, ui : false, headPosition : false, debug : debugOverlay});
+      htracker.init(videoInput, canvasInput);
+      htracker.start();
+      var globalx = 0;
+      var globaly = 0;
+      var globalangle
+
+	  var maxangle = 0;
+	  var myDate = new Date();
+	  var starttime = myDate.getTime();
+	  var endtime;
+	  var steptime = 0;
+	  //
+	  var userdata;
+
+
+      //1-left 2-right 3-up 4-down 5-central
+      var state = 5;
+      var init=false;
+      // for each facetracking event received draw rectangle around tracked face on canvas
+      document.addEventListener("facetrackingEvent", function( event ) {
+        // clear canvas
+        var ienum = document.getElementById('ienum');
+        var irealtime= document.getElementById('realtime');
+        irealtime.innerHTML = event.x+" "+event.y+" "+event.height+" "+event.angle;
+        if(!init)
+        {
+          if(event.height>175)
+          {
+            ienum.innerHTML = "please farer";
+            return ;
+          }
+          else if(event.height<155)
+          {
+            ienum.innerHTML = "please closer";
+            return ;
+          }
+          else
+          {
+            init = true;
+            globaly = event.height;
+          }
+        }
+        else
+        {
+          //irealtime.innerHTML = globalx;
+          overlayContext.clearRect(0,0,320,240);
+          // once we have stable tracking, draw rectangle
+          if (event.detection == "CS") {
+
+          }
+          if(event.angle > 1.8 && event.height > 150)
+            ienum.innerHTML = "left";
+          else if(event.angle < 1.4 && event.height > 150)
+            ienum.innerHTML = "right";
+          else if(event.height > 180 && event.angle < 1.65 && event.angle > 1.45)
+            ienum.innerHTML = "up";
+          else if(event.height < 100)
+            ienum.innerHTML = "down";
+          else
+            ienum.innerHTML = "central";
+        }
+      });
+    </script>
+</body>
+</html>
