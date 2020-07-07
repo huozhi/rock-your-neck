@@ -1,7 +1,9 @@
 # Rock Your Neck
 > rolling your neck to play game 2048
 
-[DEMO](https://huozhi.github.io/rock-your-neck/)
+[DEMO](https://huozhi.im/rock-your-neck/)
+
+![Screenshot](./public/demo.png)
 
 ## Development
 

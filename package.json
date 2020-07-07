@@ -3,12 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "http-server ./public 8080",
-    "deploy": "gh-pages -d public"
+    "start": "hs ."
   },
-  "dependencies": {},
   "devDependencies": {
-    "gh-pages": "^1.1.0",
     "http-server": "^0.10.0"
   }
 }
