@@ -176,7 +176,10 @@ headtrackr.Tracker = function(params) {
 					if (video.mozCaptureStream) {
 					  video.mozSrcObject = stream;
 					} else {
-					  video.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+            // video.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+            // Patch: fix `Failed to execute 'createObjectURL' on 'URL'` on chrome
+            // https://stackoverflow.com/questions/53626318/chrome-update-failed-to-execute-createobjecturl-on-url/53734174
+            video.srcObject = stream;
 					}
 					video.play();
 				}).bind(this), function() {
